@@ -1,0 +1,100 @@
+\subsubsection*{CA-Struktur vorbereiten}
+
+Für die CRL-Verwaltung benötigt OpenSSL eine fest definierte Verzeichnisstruktur.
+Im Projektordner wird folgende Struktur angelegt:
+
+\begin{verbatim}
+pki/
+|-- certs/
+|-- crl/
+|-- newcerts/
+|-- private/
+`-- index.txt
+\end{verbatim}
+
+
+Zusätzlich wird die Datei für die Seriennummer angelegt:
+
+\begin{verbatim}
+echo 1000 > serial
+echo 1000 > crlnumber
+touch index.txt
+\end{verbatim}
+
+\subsubsection*{OpenSSL-Konfigurationsdatei für CRLs}
+
+Die Datei \texttt{openssl.cnf} wird so erweitert, dass CRLs erzeugt und verwaltet werden können:
+
+\begin{verbatim}
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir             = ./pki
+database        = $dir/index.txt
+new_certs_dir   = $dir/newcerts
+certificate     = $dir/certs/ca.cert.pem
+private_key     = $dir/private/ca.key.pem
+serial          = $dir/serial
+crlnumber       = $dir/crlnumber
+crl_dir         = $dir/crl
+crl             = $crl_dir/ca.crl.pem
+default_crl_days = 30
+default_md      = sha256
+\end{verbatim}
+
+Damit OpenSSL später weiß, wohin es CRLs schreiben soll, wird außerdem ein CRL Distribution Point in der Konfiguration definiert:
+
+\begin{verbatim}
+[ v3_ca ]
+crlDistributionPoints = URI:http://localhost/crl/ca.crl.pem
+\end{verbatim}
+
+\subsubsection*{Zertifikat widerrufen}
+
+Ein ausgestelltes Zertifikat wird mit folgendem Kommando gesperrt:
+
+\begin{verbatim}
+openssl ca -config openssl.cnf -revoke pki/certs/server.cert.pem
+\end{verbatim}
+
+Dabei trägt OpenSSL automatisch einen neuen Eintrag in die Datei \texttt{index.txt} ein:
+
+\begin{verbatim}
+R    <Datum>   <Seriennummer>   unknown ...
+\end{verbatim}
+
+\subsubsection*{CRL erzeugen}
+
+Nach dem Widerruf wird eine neue CRL erstellt:
+
+\begin{verbatim}
+openssl ca -config openssl.cnf -gencrl \
+    -out pki/crl/ca.crl.pem
+\end{verbatim}
+
+Die Datei \texttt{ca.crl.pem} ist nun die gültige Sperrliste der CA.
+
+\subsubsection*{CRL prüfen}
+
+Die erzeugte CRL kann mit folgendem Befehl angezeigt werden:
+
+\begin{verbatim}
+openssl crl -in pki/crl/ca.crl.pem -text -noout
+\end{verbatim}
+
+Wichtige Ausgaben:
+
+\begin{itemize}
+    \item \textbf{Last Update} – Zeitpunkt der Erstellung
+    \item \textbf{Next Update} – Gültigkeitsdauer der CRL
+    \item \textbf{Revoked Certificates} – Liste der gesperrten Zertifikate
+\end{itemize}
+
+Beispielauszug:
+
+\begin{verbatim}
+Revoked Certificates:
+    Serial Number: 1005
+        Revocation Date: Mar  5 10:15:03 2025 GMT
+\end{verbatim}

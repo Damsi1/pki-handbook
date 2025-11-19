@@ -326,3 +326,7 @@ TSWLatexianTemp*
 #*Notes.bib
 
 *.xmpdata
+
+# OS generated files
+.DS_Store
+

@@ -1,1 +1,43 @@
-\chapter{Certificate Revokation}
+\chapter{Certificate Revocation}
+
+\section{CRL – Certificate Revocation Lists}
+
+\subsection{Erstellung und Veröffentlichung einer CRL mit XCA und Nginx}
+\input{chapters/06-Revokation/CRL_XCA_nginx/crlxca.tex}
+
+\subsection{Erstellung und Veröffentlichung einer CRL mit OpenSSL und Nginx}
+\input{chapters/06-Revokation/CRL_XCA_nginx/crlossl}
+
+\subsection{Verhalten moderner Browser bei CRLs}
+
+\subsubsection*{Einordnung}
+
+Nachdem im vorherigen Abschnitt gezeigt wurde, wie eine CRL mit XCA erzeugt und über einen Webserver wie Nginx bereitgestellt wird, stellt sich in der Praxis die Frage, welche Clients diese Informationen tatsächlich auswerten. Besonders relevant ist dabei das Verhalten moderner Webbrowser, da diese maßgeblich bestimmen, ob ein Zertifikatswiderruf im Alltag zuverlässig erkannt wird.
+
+In realen Systemen zeigt sich jedoch, dass viele Browser die im Zertifikat hinterlegten Widerrufsinformationen – wie CRL Distribution Points oder OCSP-Server – entweder gar nicht oder nur eingeschränkt berücksichtigen. Dies gilt insbesondere in Umgebungen mit eigenen, internen Zertifizierungsstellen, wie in unserem Laboraufbau. Selbst wenn eine CRL technisch korrekt erstellt und öffentlich bereitgestellt wird, heißt das nicht, dass alle Browser diese Informationen automatisch abrufen oder zur Validierung heranziehen.
+
+\subsubsection{Mozilla Firefox}
+\input{chapters/06-Revokation/CRL_im_Browser/Firefox.tex}
+
+\subsubsection{Google Chrome}
+\input{chapters/06-Revokation/CRL_im_Browser/Chrome.tex}
+
+\subsubsection{Microsoft Edge}
+\input{chapters/06-Revokation/CRL_im_Browser/Edge.tex}
+
+\subsubsection{Apple Safari}
+\input{chapters/06-Revokation/CRL_im_Browser/Safari.tex}
+
+\subsubsection*{Allgemeine Herausforderungen und Problematik bei Zertifikatswiderrufen}
+\input{chapters/06-Revokation/CRL-Problematik/crlproblem.tex}
+
+
+% ==========================================================
+%           **NEUER HAUPTPUNKT: OCSP**
+% ==========================================================
+\newpage
+
+\section{OCSP – Online Certificate Status Protocol}
+
+
+

@@ -1,0 +1,60 @@
+\paragraph*{Einleitung}
+
+In einer Public-Key-Infrastruktur (PKI) dienen Certificate Revocation Lists (CRLs) und OCSP-Abfragen eigentlich dazu, festzustellen, ob ein Zertifikat widerrufen wurde, bevor seine reguläre Gültigkeit abläuft. Die dazu nötigen Informationen – wie der CRL Distribution Point (CDP) oder die Authority Information Access (AIA) – liegen im X.509-Zertifikat eingebettet vor.
+
+In modernen Browsern wird dieses Verhalten jedoch unterschiedlich interpretiert. Gerade im Kontext unserer selbst betriebenen CA-Struktur ist wichtig zu verstehen, dass Firefox diese Felder nicht zuverlässig auswertet, selbst wenn CRLs wie zuvor eingerichtet korrekt über HTTP erreichbar sind.
+
+\paragraph*{Verhalten von Firefox}
+
+Firefox setzt zur Zertifikatsvalidierung auf die \textit{Network Security Services (NSS)}-Bibliothek. Laut einer Diskussion in der offiziellen Mozilla Developer Mailingliste ruft Firefox CRLs grundsätzlich nicht automatisch anhand der im Zertifikat hinterlegten CDPs ab – mit Ausnahme bestimmter Extended-Validation-Zertifikate:
+
+\begin{quote}
+    ``Firefox uses NSS’s feature to fetch CRLs~\ldots{} but only for EV certificate chains.'' \\
+    (Mozilla.dev.security.policy, 2010)
+\end{quote}
+
+Quelle: \url{https://groups.google.com/g/mozilla.dev.security.policy/c/piOzRNNcgy0}
+
+Auch andere Analysen bestätigen, dass CRLs von Firefox im Normalfall vollständig ignoriert werden:
+
+\begin{quote}
+    ``Firefox allows you to check for revoked certificates via the OCSP method, but it doesn’t use the CRL at all.'' \\
+    (F5 Networks, 2016)
+\end{quote}
+
+Quelle: \url{https://community.f5.com/kb/technicalarticles/security-sidebar-my-browser-has-no-idea-your-certificate-was-just-revoked/281100}
+
+Anstelle klassischer CRL- oder OCSP-Abfragen setzt Mozilla zunehmend auf ein alternatives Widerrufssystem namens \textit{CRLite}, das Widerrufsdaten in komprimierter Form zentral an Firefox-Nutzer verteilt:
+
+\begin{quote}
+    ``CRLite pushes bulk certificate revocation information to Firefox users, reducing the need to actively query such information one by one.'' \\
+    (Mozilla Security Blog, 2020)
+\end{quote}
+
+Quelle: \url{https://blog.mozilla.org/security/2020/01/21/crlite-part-3-speeding-up-secure-browsing}
+
+Weiterhin wurde angekündigt, dass mit Firefox 142 das Online Certificate Status Protocol (OCSP) für DV-Zertifikate vollständig deaktiviert wird:
+
+\begin{quote}
+    ``We will be disabling OCSP for domain validated certificates in Firefox 142.'' \\
+    (Mozilla Hacks, 2025)
+\end{quote}
+
+Quelle: \url{https://hacks.mozilla.org/2025/08/crlite-fast-private-and-comprehensive-certificate-revocation-checking-in-firefox}
+
+
+\paragraph*{Quellen}
+
+\begin{itemize}
+    \item Mozilla.dev.security.policy (2010). Discussion: Firefox CRL behavior. \\
+    \url{https://groups.google.com/g/mozilla.dev.security.policy/c/piOzRNNcgy0}
+
+    \item F5 Networks (2016). \textit{My browser has no idea your certificate was just revoked.} \\
+    \url{https://community.f5.com/kb/technicalarticles/security-sidebar-my-browser-has-no-idea-your-certificate-was-just-revoked/281100}
+
+    \item Mozilla Security Blog (2020). \textit{CRLite: Speeding Up Secure Browsing.} \\
+    \url{https://blog.mozilla.org/security/2020/01/21/crlite-part-3-speeding-up-secure-browsing}
+
+    \item Mozilla Hacks (2025). \textit{CRLite: Fast, Private, and Comprehensive Certificate Revocation Checking in Firefox.} \\
+    \url{https://hacks.mozilla.org/2025/08/crlite-fast-private-and-comprehensive-certificate-revocation-checking-in-firefox}
+\end{itemize}

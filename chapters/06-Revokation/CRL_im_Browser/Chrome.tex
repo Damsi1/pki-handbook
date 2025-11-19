@@ -1,0 +1,67 @@
+\subsubsection*{Einleitung}
+
+In einer X.509-basierten Public-Key-Infrastruktur dienen Certificate Revocation Lists (CRLs) und OCSP-Abfragen dazu, den Widerrufsstatus eines Zertifikats zu überprüfen. Obwohl diese Informationen im Zertifikat eindeutig hinterlegt sind – etwa über den CRL Distribution Point (CDP) oder die Authority Information Access (AIA) – werden sie von modernen Browsern sehr unterschiedlich gehandhabt.
+
+Viele Browser greifen diese klassischen PKI-Mechanismen entweder nur eingeschränkt oder gar nicht ab und setzen stattdessen auf eigene, teils proprietäre Widerrufssysteme, die sich meist ausschließlich auf öffentliche Zertifizierungsstellen beziehen. Für interne PKI-Umgebungen, wie in unserem Laboraufbau, bedeutet dies, dass selbst korrekt erstellte und veröffentlichte CRLs nicht zuverlässig ausgewertet werden und Widerrufe aus privaten CAs von den meisten Browsern ignoriert werden.
+
+\subsubsection*{Verhalten von Google Chrome}
+
+Chrome verwendet weder die im Zertifikat eingetragenen CRL-URLs noch führt der Browser OCSP-Abfragen basierend auf dem AIA-Feld durch. Diese Entscheidung ist bewusst getroffen und wird von Google ausführlich begründet. Die wichtigsten Punkte sind:
+
+\begin{itemize}
+    \item \textbf{Performance}: Jede OCSP-Abfrage würde eine Netzwerkoperation erfordern und den Seitenaufbau erheblich verzögern.
+    \item \textbf{Ausfallsicherheit}: CRLs sind teils mehrere Megabyte groß und würden beim Abruf regelmäßig die Verbindung verlangsamen.
+    \item \textbf{Datenschutz}: OCSP-Anfragen verraten dem OCSP-Server jede aufgerufene Website eines Nutzers.
+\end{itemize}
+
+Statt CRLs oder OCSP nutzt Chrome ein alternatives Widerrufsmodell: die sogenannten \textit{CRLSets}. Dabei handelt es sich um komprimierte Listen widerrufener Zertifikate, die von Google zentral gepflegt und im Rahmen der regulären Browser-Updates automatisch an alle Chrome-Installationen verteilt werden.
+
+\paragraph*{CRLSets}
+
+CRLSets erfüllen einen grundlegend anderen Zweck als klassische CRLs:
+
+\begin{quote}
+    ``CRLSets are designed to provide protection against high-risk revocations, not to represent a complete revocation list.'' \\
+    (Chromium Security Team)
+\end{quote}
+
+\subparagraph*{Funktionsweise}
+
+\begin{itemize}
+    \item Google crawlt öffentliche Widerrufsinformationen ausgewählter CAs.
+    \item Nur sicherheitskritische Widerrufe (z.~B. kompromittierte Root- oder Intermediate-Zertifikate) werden in CRLSets aufgenommen.
+    \item CRLSets werden als kleines, hochkomprimiertes Paket an Chrome-Nutzer verteilt.
+    \item Die im Zertifikat eingebetteten CDP- oder OCSP-Informationen werden ignoriert.
+\end{itemize}
+
+\subparagraph*{Einschränkungen}
+
+CRLSets sind ausdrücklich \textbf{nicht} dazu geeignet, individuelle Serverzertifikate zu widerrufen:
+
+\begin{itemize}
+    \item End-Entity-Zertifikate werden in der Regel \emph{nicht} aufgenommen.
+    \item Private CAs, wie in unserem Laboraufbau, werden vollständig ignoriert.
+    \item CRLSets enthalten nur wenige, global relevante Sperrungen.
+\end{itemize}
+
+\begin{quote}
+    ``CRLSets are not intended to cover every certificate. They are only a stopgap for critical incidents.'' \\
+    (Adam Langley, Google)
+\end{quote}
+
+\subsubsection*{Problemstellung: Private CA und Widerruf in Chrome}
+
+Da Chrome weder CRLs noch OCSP nutzt und private CAs nicht in das CRLSet-System integriert, ergeben sich im Laboraufbau mehrere praktische Probleme:
+
+\subparagraph*{Chrome ruft die veröffentlichte CRL nicht ab}
+Obwohl der CRL Distribution Point korrekt gesetzt ist und die Liste über HTTP abrufbar wäre, berücksichtigt Chrome diese Information nicht.
+
+\subparagraph*{OCSP wird nicht verwendet}
+Selbst wenn ein eigener OCSP-Responder betrieben wird, stellt Chrome keine Abfragen an diesen Dienst.
+
+\subparagraph*{CRLSets ignorieren private CAs}
+Da Google CRLSets nur für Zertifikate erstellt, die in öffentlichen Root-Stores enthalten sind, werden intern ausgestellte Zertifikate grundsätzlich nicht abgedeckt.
+
+\subparagraph*{Widerruf wird nicht erkannt}
+Ein widerrufenes Zertifikat wird in Chrome weiterhin als gültig angezeigt, da der Browser keinerlei Widerrufsmechanismen unserer PKI nutzt.
+

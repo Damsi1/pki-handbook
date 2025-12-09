@@ -178,32 +178,22 @@
 }
 \renewcommand{\lstlistingname}{Program Code}
 
-%%
-%% Customize Titlepage for Department of Civil Engineering
-%%
+
 \RequirePackage{ifthen}
 
 \newcommand{\titleDAen}[1]{
-{\large \textsc{Lab Report}}
-\\[3ex]
 {\LARGE \textbf{#1
 }
-\\[3.5ex]}
+\\[1ex]}
 {\large
-Building a PKI with root, intermediate, and TLS server certificates including revocation testing and TLS connection verification
-\\[1ex]
-\textsc{Exercise 01}
+Guide to setting up a root and intermediate CA, deploying TLS certificates, and understanding today’s limited browser revocation behavior.
 }}
 
 \newcommand{\titleDAde}[1]{
-{\large \textsc{Laborprotokoll}}
-\\[3ex]
 {\LARGE \textbf{#1}
-\\[3.5ex]}
+\\[1ex]}
 {
-Aufbau einer PKI mit Root-, Intermediate- und TLS-Server-Zertifikat inklusive Revokationtest sowie Prüfung der TLS-Verbindung
-\\[1ex]
-\textsc{Übung 01}
+Anleitung zum Einrichten einer Stamm- und Zwischen-Zertifizierungsstelle, zum Bereitstellen von TLS-Zertifikaten und zum Verständnis des derzeit begrenzten Verhaltens von Browsern bei der Sperrung von Zertifikaten.
 }}
 
 \newcommand{\titleDISSen}[1]{{\large PhD Thesis} \\[3ex]

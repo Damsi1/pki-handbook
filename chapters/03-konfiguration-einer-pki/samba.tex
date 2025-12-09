@@ -1,0 +1,117 @@
+\section{Exportieren der Zertifikate auf den Server}
+
+\subsection{Samba}
+To implement the certificates on your server, you will need to copy the certificate and key files from your local machine to the server. Several options are available for this task, such as setting up an FTP server, using an SSH connection, or employing other file transfer methods. However, in practice, Samba is one of the most widely used solutions for file sharing between systems, particularly in mixed Windows and Linux environments.
+
+Samba enables Linux systems to share files and directories over a network using the SMB/CIFS protocol, which is natively supported by Windows systems and can be easily accessed from Linux file managers as well.
+
+\subsubsection{Installing Samba}
+To install Samba on a Debian-based system, use the following commands:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo apt update
+sudo apt install samba
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Creating a Shared Directory}
+You can either use an existing directory or create a new one specifically for sharing files. For this example, we will create a new directory dedicated to certificate management:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+mkdir -p ~/shared/certificates
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Configuring Samba}
+The Samba configuration file needs to be edited to define the shared directory and its access permissions. Open the configuration file with your preferred text editor:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo nano /etc/samba/smb.conf
+    \end{verbatim}
+\end{tcolorbox}
+
+The configuration file contains numerous settings, but for this basic setup, you can leave the existing settings untouched. Add the following configuration block at the end of the file:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+[certificates]
+   path = /home/youruser/shared/certificates
+   browseable = yes
+   read only = no
+   guest ok = no
+   valid users = youruser
+    \end{verbatim}
+\end{tcolorbox}
+
+The configuration parameters have the following meanings:
+\begin{itemize}
+    \item \textbf{[certificates]}: The share name that will appear in the network
+    \item \textbf{path}: The absolute path to the directory being shared
+    \item \textbf{browseable}: Makes the share visible in network browsing
+    \item \textbf{read only}: Set to \textit{no} to allow write access
+    \item \textbf{guest ok}: Set to \textit{no} to require authentication
+    \item \textbf{valid users}: Specifies which users can access the share
+\end{itemize}
+
+Replace \texttt{youruser} with your actual Linux username on the server.
+
+\subsubsection{Setting up Authentication}
+Samba uses its own password database for authentication. You need to create a Samba password for your user account (this can be different from your Linux system password):
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo smbpasswd -a youruser
+    \end{verbatim}
+\end{tcolorbox}
+
+You will be prompted to enter and confirm a password. This is the password you will use when accessing the share from other systems.
+
+\subsubsection{Applying the Configuration}
+After making the configuration changes, restart the Samba service to apply them:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo systemctl restart smbd
+    \end{verbatim}
+\end{tcolorbox}
+
+Optionally, you can enable Samba to start automatically on boot:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo systemctl enable smbd
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Accessing the Share}
+The shared directory can now be accessed from different operating systems using the appropriate network path format.
+
+\textbf{From Linux:} \\
+In most Linux file managers, you can access the share by entering the following address in the location bar:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+smb://ip-of-vm/certificates
+    \end{verbatim}
+\end{tcolorbox}
+
+Replace \texttt{ip-of-vm} with the actual IP address of your server.
+
+\textbf{From Windows:} \\
+In Windows Explorer, enter the following path in the address bar:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+\\ip-of-vm\certificates
+    \end{verbatim}
+\end{tcolorbox}
+
+When prompted, enter the username and Samba password you configured earlier.
+
+\subsubsection{Transferring Certificates}
+Once the share is accessible, you can copy your certificate and key files into the shared directory from your local machine. These files will then be available on the server and can be moved to their appropriate locations as described in Section \ref{sec:export-der-zertifikate-und-schluessel}.
+
+Any files placed in this shared directory will be immediately accessible to all systems that have proper authentication credentials for the share.

@@ -1,0 +1,113 @@
+\section{Konfiguration einer PKI in OpenSSL}
+
+\subsection{Einleitung}
+In diesem Protokoll wird beschrieben, wie unter macOS eine vollständige Public Key Infrastructure (PKI) eingerichtet wird. Ziel ist es, ein eigenes Root-Zertifikat (CA) und ein signiertes Server-Zertifikat zu erstellen, dieses in einem lokalen Nginx-Webserver zu verwenden und die sichere Verbindung über HTTPS im Browser zu überprüfen. Abschließend wird gezeigt, wie das Server-Zertifikat über eine Certificate Revocation List (CRL) widerrufen wird.
+
+\subsection{Voraussetzungen}
+\begin{itemize}
+    \item macOS (mit Terminal und OpenSSL)
+    \item Homebrew zur Installation von Nginx
+    \item Administratorrechte (für Keychain-Zugriff)
+\end{itemize}
+
+\subsection{Ordnerstruktur}
+Im Benutzerverzeichnis wird folgender Projektordner angelegt:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+mkdir -p ~/pki-demo/{ca,server,crl}
+cd ~/pki-demo
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsection{Erstellung der Root-CA}
+Zuerst wird eine Root-CA erstellt, die als Vertrauensanker dient.
+
+\subsubsection{Private Key}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+openssl genrsa -out ca/ca.key 4096
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Self-signed Root-Zertifikat}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+openssl req -x509 -new -nodes -key ca/ca.key -sha256 -days 3650 \
+  -out ca/ca.crt \
+  -subj "/C=AT/ST=Niederoesterreich/L=Mariazell/O=C/OU=C/CN=Christian Wunder Root CA"
+    \end{verbatim}
+\end{tcolorbox}
+
+Dieses Zertifikat wird später in die macOS-Keychain importiert, um von Chrome und Safari als vertrauenswürdig erkannt zu werden.
+
+\subsection{Erstellung des Server-Zertifikats}
+
+\subsubsection{Private Key}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+openssl genrsa -out server/server.key 2048
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Konfigurationsdatei mit SAN}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+cat > server/openssl_server.cnf << 'EOF'
+[ req ]
+default_bits        = 2048
+prompt              = no
+default_md          = sha256
+distinguished_name  = dn
+req_extensions      = v3_req
+
+[ dn ]
+C  = AT
+ST = Niederoesterreich
+L  = Mariazell
+O  = C
+OU = C
+CN = localhost
+
+[ v3_req ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = localhost
+IP.1  = 127.0.0.1
+EOF
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{CSR (Certificate Signing Request)}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+openssl req -new -key server/server.key -out server/server.csr \
+  -config server/openssl_server.cnf
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsubsection{Signieren durch die Root-CA}
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+openssl x509 -req -in server/server.csr -CA ca/ca.crt -CAkey ca/ca.key \
+  -CAcreateserial -out server/server.crt -days 825 -sha256 \
+  -extfile server/openssl_server.cnf -extensions v3_req
+    \end{verbatim}
+\end{tcolorbox}
+
+\subsection{Import der Root-CA in macOS}
+Damit Chrome und Safari dem Zertifikat vertrauen, muss die Root-CA als „System Root“ importiert werden:
+
+\begin{tcolorbox}[colback=black!3!white, colframe=black!60!white]
+    \begin{verbatim}
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain ca/ca.crt
+    \end{verbatim}
+\end{tcolorbox}

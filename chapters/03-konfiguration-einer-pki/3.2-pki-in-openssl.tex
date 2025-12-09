@@ -1,1 +1,107 @@
 \section{Konfiguration einer PKI in OpenSSL}
+\subsection*{Ordnerstruktur}
+
+\begin{verbatim}
+mkdir -p ~/pki-demo/{ca,server,crl}
+cd ~/pki-demo
+mkdir -p ~/pki-demo/{ca,server,crl}
+cd ~/pki-demo
+\end{verbatim}
+
+Im Benutzerverzeichnis wurde folgender Projektordner angelegt.
+
+\subsection*{Erstellung der Root-CA}
+
+Zuerst wird eine Root-CA erstellt, die als Vertrauensanker dient.
+
+\subsubsection*{Private Key}
+
+\begin{verbatim}
+openssl genrsa -out ca/ca.key 4096
+openssl genrsa -out ca/ca.key 4096
+\end{verbatim}
+
+\subsubsection*{Self-signed Root-Zertifikat}
+
+\begin{verbatim}
+openssl req -x509 -new -nodes -key ca/ca.key -sha256 -days 3650 \
+-out ca/ca.crt \
+-subj "/C=AT/ST=Nieder sterreich/L=Mariazell/O=C/OU=C/CN=Christian Wunder Root CA"
+
+openssl req -x509 -new -nodes -key ca/ca.key -sha256 -days 3650 \
+-out ca/ca.crt \
+-subj "/C=AT/ST=Nieder sterreich/L=Mariazell/O=C/OU=C/CN=Christian Wunder Root CA"
+\end{verbatim}
+
+Dieses Zertifikat wird später in die macOS-Keychain importiert, um von Chrome und Safari als vertrauenswürdig erkannt zu werden.
+
+\subsection*{Erstellung des Server-Zertifikats}
+
+\subsubsection*{Private Key}
+
+\begin{verbatim}
+openssl genrsa -out server/server.key 2048
+openssl genrsa -out server/server.key 2048
+\end{verbatim}
+
+\subsubsection*{Konfigurationsdatei mit SAN}
+
+\begin{verbatim}
+cat > server/openssl_server.cnf <<'EOF'
+[ req ]
+default_bits        = 2048
+prompt              = no
+default_md          = sha256
+distinguished_name  = dn
+req_extensions      = v3_req
+
+[ dn ]
+C = AT
+ST = Niederoesterreich
+L = Mariazell
+O = C
+OU = C
+CN = localhost
+
+[ v3_req ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = localhost
+IP.1  = 127.0.0.1
+EOF
+\end{verbatim}
+
+(Identischer Block wurde im Original erneut eingefügt.)
+
+\subsubsection*{CSR (Certificate Signing Request)}
+
+\begin{verbatim}
+openssl req -new -key server/server.key -out server/server.csr \
+-config server/openssl_server.cnf
+
+openssl req -new -key server/server.key -out server/server.csr \
+-config server/openssl_server.cnf
+\end{verbatim}
+
+\subsubsection*{Signieren durch die Root-CA}
+
+\begin{verbatim}
+openssl x509 -req -in server/server.csr -CA ca/ca.crt -CAkey ca/ca.key \
+-CAcreateserial -out server/server.crt -days 825 -sha256 \
+-extfile server/openssl_server.cnf -extensions v3_req
+
+openssl x509 -req -in server/server.csr -CA ca/ca.crt -CAkey ca/ca.key \
+-CAcreateserial -out server/server.crt -days 825 -sha256 \
+-extfile server/openssl_server.cnf -extensions v3_req
+\end{verbatim}
+
+\subsection*{Import der Root-CA in macOS}
+
+\begin{verbatim}
+sudo security add-trusted-cert -d -r trustRoot \
+-k /Library/Keychains/System.keychain ca/ca.crt
+
+sudo security add-trusted-cert -d -r trustRoot \
+-k /Library/Keychains/System.keychain ca/ca.crt
+\end{verbatim}

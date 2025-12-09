@@ -1,0 +1,47 @@
+\paragraph*{Verhalten von Safari (macOS)}
+Safari nutzt für die Zertifikatsvalidierung die in macOS integrierte \textit{trustd}-Infrastruktur,
+die sowohl die System-CA-Verwaltung als auch die Revocation-Prüfungen steuert. Bereits auf der
+WWDC 2017 erklärte Apple, dass klassische CRL-Abfragen entfernt wurden und Safari CRLs
+grundsätzlich nicht mehr automatisch anhand der im Zertifikat angegebenen Verteilungspunkte (CDPs) bezieht:
+
+\begin{quote}
+    “Certificate Revocation Lists are no longer fetched by macOS or iOS.
+    We rely on our own enhanced revocation mechanism.”
+\end{quote}
+\textit{(Apple WWDC 2017 – ``Your Apps and Evolving Network Security Standards'')}
+
+Auch externe Analysen bestätigen, dass Safari im Regelfall keine CRLs verwendet und stattdessen nur
+eingeschränkte OCSP-Prüfungen durchführt:
+
+\begin{quote}
+    “Safari does not perform CRL fetching and performs OCSP checks only when
+    required by policy or when a stapled response is presented.”
+\end{quote}
+\textit{(SSL.com, 2020)}
+
+Für Zertifikate, die nicht Teil dieser von Apple gepflegten Quellen sind — etwa Zertifikate aus einer
+eigenen lokalen PKI — führt Safari keine automatischen CRL- oder zuverlässigen OCSP-Checks durch.
+Widerrufe aus privaten CRLs oder privaten OCSP-Respondern werden daher im Normalfall nicht erkannt,
+es sei denn, der Server liefert eine gültige OCSP-Stapling-Antwort und das Zertifikat entspricht
+Apples Validierungsrichtlinien:
+
+\begin{quote}
+    “Revocation for private CAs is not guaranteed unless the server provides
+    valid OCSP stapling.”
+\end{quote}
+\textit{(SSL.com, 2020)}
+
+\subparagraph*{Quellen}
+
+\begin{itemize}
+    \item Apple WWDC 2017 – \textit{Your Apps and Evolving Network Security Standards}.\\
+    \url{https://devstreaming-cdn.apple.com/videos/wwdc/2017/701jvytnoey2yc7222/701/701_your_apps_and_evolving_network_security_standards.pdf}
+    \item WWDC 2017 Video (HD-Version).\\
+    \url{https://devstreaming-cdn.apple.com/videos/wwdc/2017/701jvytnoey2yc7222/701/701_hd_your_apps_and_evolving_network_security_standards.mp4?dl=1}
+    \item SSL.com (2020). \textit{How Do Browsers Handle Revoked SSL/TLS Certificates?}\\
+    \url{https://www.ssl.com/blogs/how-do-browsers-handle-revoked-ssl-tls-certificates/}
+    \item Diskussion auf Hacker News.\\
+    \url{https://news.ycombinator.com/item?id=45245749}
+    \item Let's Encrypt (2022). \textit{New Life for CRLs}.\\
+    \url{https://letsencrypt.org/2022/09/07/new-life-for-crls}
+\end{itemize}
